@@ -59,6 +59,8 @@ public class ArcherController : MonoBehaviour
             animator.SetBool("isJumping", true);
         }
 
+
+
         if (Input.GetMouseButtonDown(0))
         {
             // Instancia la flecha en la posición del jugador (o cámara)
