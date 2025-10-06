@@ -20,6 +20,8 @@ public class ArcherController : MonoBehaviour
 
     private int currentHealth;
 
+    public GameObject specialAttackPrefab; // Arrástralo en el Inspector
+    public float specialAttackRadius = 1.5f; // Radio del ataque (ajusta según necesites)
 
     void Start()
     {
@@ -59,8 +61,6 @@ public class ArcherController : MonoBehaviour
             animator.SetBool("isJumping", true);
         }
 
-
-
         if (Input.GetMouseButtonDown(0))
         {
             // Instancia la flecha en la posición del jugador (o cámara)
@@ -69,6 +69,9 @@ public class ArcherController : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
         {
             animator.SetTrigger("specialAttack");
+            Invoke("CreateSpecialAttack", 0.6f); // Ligeramente retrasado para sincronizar con la animación
+
+
         }
     }
 
@@ -100,6 +103,17 @@ public class ArcherController : MonoBehaviour
         // Aplica fuerza en esa dirección
         arrow.GetComponent<Rigidbody2D>().AddForce(direction * shootForce, ForceMode2D.Impulse);
     }
+        public void CreateSpecialAttack()
+    {
+    if (specialAttackPrefab == null) return;
+    
+    // Instancia el rectángulo justo en la posición del arquero
+    GameObject hitbox = Instantiate(specialAttackPrefab, shootPoint.position, Quaternion.identity);
+    
+    // Se destruye solo después de 0.2 segundos (¡muy rápido!)
+    Destroy(hitbox, 2f);
+    }
+
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
