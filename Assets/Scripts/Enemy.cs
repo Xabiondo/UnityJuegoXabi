@@ -5,7 +5,6 @@ public class Enemy : MonoBehaviour
 {
     public int maxHealth = 4;
     private int currentHealth;
-
     private Animator animator;
     private bool isDead = false;
 
@@ -13,8 +12,7 @@ public class Enemy : MonoBehaviour
     private bool isWalking = false;
     private Rigidbody2D rb;
     public float speed = 2f;
-
-        private bool canAttack = true;
+    private bool canAttack = true;
     public float attackCooldown = 1f;
 
     void Start()
@@ -28,19 +26,17 @@ public class Enemy : MonoBehaviour
     {
         if (isDead || player == null) return;
 
-        // Solo calcular diferencia en X (ignorar Y completamente)
         float distanceX = player.position.x - transform.position.x;
         float absDistanceX = Mathf.Abs(distanceX);
 
         if (absDistanceX > 0.1f)
         {
-            // Mover solo en X, Y = 0 siempre
+
             float directionX = Mathf.Sign(distanceX);
-            rb.velocity = new Vector2(directionX * speed, 0); // ← ¡Y = 0!
+            rb.velocity = new Vector2(directionX * speed, 0);
 
             isWalking = true;
 
-            // Voltear sprite
             if (directionX > 0)
                 transform.localScale = new Vector3(7, 7, 1);
             else if (directionX < 0)
@@ -48,7 +44,7 @@ public class Enemy : MonoBehaviour
         }
         else
         {
-            // Detenerse
+
             rb.velocity = Vector2.zero;
             isWalking = false;
         }
@@ -66,20 +62,18 @@ public class Enemy : MonoBehaviour
     }
       void AttackPlayer(GameObject playerObj)
     {
-        // Reproducir animación de ataque
+
         animator.SetTrigger("attack");
         isWalking = false;
         animator.SetBool("isWalking", false);
 
-        // Quitar vida al jugador
         ArcherController archer = playerObj.GetComponent<ArcherController>();
 
         if (archer != null)
         {
-            archer.TakeDamage(1); // Daño configurable
+            archer.TakeDamage(1); 
         }
 
-        // Iniciar cooldown
         canAttack = false;
         Invoke("ResetAttack", attackCooldown);
     }
@@ -95,7 +89,6 @@ public class Enemy : MonoBehaviour
         animator.SetBool("isWalking", false);
         animator.SetTrigger("die");
 
-        // Usa la variable 'rb' existente
         if (rb != null) rb.simulated = false;
 
         Collider2D col = GetComponent<Collider2D>();

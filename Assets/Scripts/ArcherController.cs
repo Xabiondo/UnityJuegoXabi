@@ -16,10 +16,13 @@ public class ArcherController : MonoBehaviour
     private bool isJumping;
     public float jumpAmount = 30f;
 
+    private bool isDead = false;
+
     public int maxHealth = 3;
 
     private int currentHealth;
 
+    Transform spawnPoint;
     public GameObject specialAttackPrefab; // Arrástralo en el Inspector
     public float specialAttackRadius = 1.5f; // Radio del ataque (ajusta según necesites)
 
@@ -28,10 +31,12 @@ public class ArcherController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         currentHealth = maxHealth;
+        spawnPoint = GameObject.FindGameObjectWithTag("Respawn").transform;
     }
 
     private void FixedUpdate()
     {
+        if (isDead) return;
         float horizontalInput = Input.GetAxisRaw("Horizontal");
         float horizontalMovement = horizontalInput * speed * Time.fixedDeltaTime;
         rb.velocity = new Vector2(horizontalMovement, rb.velocity.y);
@@ -54,6 +59,7 @@ public class ArcherController : MonoBehaviour
 
     void Update()
     {
+        if (isDead) return;
         if (Input.GetKeyDown(KeyCode.Space) && !isJumping)
         {
             rb.AddForce(Vector2.up * jumpAmount, ForceMode2D.Impulse);
@@ -69,7 +75,7 @@ public class ArcherController : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
         {
             animator.SetTrigger("specialAttack");
-            Invoke("CreateSpecialAttack", 0.6f); // Ligeramente retrasado para sincronizar con la animación
+            Invoke("CreateSpecialAttack", 0.6f);
 
 
         }
@@ -78,6 +84,7 @@ public class ArcherController : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        if (isDead) return;
         if (collision.gameObject.CompareTag("Ground"))
         {
             isJumping = false;
@@ -87,12 +94,14 @@ public class ArcherController : MonoBehaviour
 
     private void Flip()
     {
+        if (isDead) return;
         Vector3 scale = transform.localScale;
         scale.x *= -1; // Solo invierte el signo, mantiene el tamaño
         transform.localScale = scale;
     }
     public void Shoot()
     {
+        if (isDead) return;
         if (arrowPrefab == null || shootPoint == null) return;
         // Instancia la flecha en la posición del ShootPoint
         GameObject arrow = Instantiate(arrowPrefab, shootPoint.position, Quaternion.identity);
@@ -103,38 +112,69 @@ public class ArcherController : MonoBehaviour
         // Aplica fuerza en esa dirección
         arrow.GetComponent<Rigidbody2D>().AddForce(direction * shootForce, ForceMode2D.Impulse);
     }
-        public void CreateSpecialAttack()
+    public void CreateSpecialAttack()
     {
-    if (specialAttackPrefab == null) return;
-    
-    // Instancia el rectángulo justo en la posición del arquero
-    GameObject hitbox = Instantiate(specialAttackPrefab, shootPoint.position, Quaternion.identity);
-    
-    // Se destruye solo después de 0.2 segundos (¡muy rápido!)
-    Destroy(hitbox, 2f);
+        if (isDead) return;
+        if (specialAttackPrefab == null) return;
+
+        // Instancia el rectángulo justo en la posición del arquero
+        GameObject hitbox = Instantiate(specialAttackPrefab, shootPoint.position, Quaternion.identity);
+
+        // Se destruye solo después de 0.2 segundos (¡muy rápido!)
+        Destroy(hitbox, 2f);
+    }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (isDead) return;
+        if (collision.gameObject.CompareTag("Spikes"))
+        {
+            TakeDamage(1);
+        }
+
     }
 
     public void TakeDamage(int damage)
     {
+        if (isDead) return;
         currentHealth -= damage;
-        Debug.Log("Archer recibió " + damage + " daño. Vida restante: " + currentHealth);
-
-        // Opcional: reproducir animación de hit
-        animator.SetTrigger("hit");
-
         if (currentHealth <= 0)
         {
             Die();
+            return;
         }
+
+
+        Debug.Log("Archer recibió " + damage + " daño. Vida restante: " + currentHealth);
+        animator.SetTrigger("hit");
 
     }
     void Die()
-    {   
-
+    {
         animator.SetTrigger("die");
+        isDead = true;
+        // Desactiva el collider y el movimiento
+
+        rb.velocity = Vector2.zero;
+
+        //LLama al méotdo Respawn después de 2 segundos
+        Invoke("Respawn", 2f);
 
         //SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+    public void Respawn()
+    {
+        // Restaura la vida
+        currentHealth = maxHealth;
+        isDead = false;
+
+        // Reactiva el collide
+
+        // Mueve al jugador al punto de respawn
+        transform.position = spawnPoint.position;
+        animator.Play("IdleArcher"); 
 
     }
+    
+    
 
 }
