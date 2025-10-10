@@ -83,12 +83,24 @@ public class Executioner : MonoBehaviour
 
         canAttack = false;
         Invoke("ResetAttack", attackCooldown);
-        
+
     }
-        void ResetAttack()
+    void ResetAttack()
     {
         canAttack = true;
     }
+
+    public void TakeDamageAndDie(int damage)
+    {
+        damage = 0;
+        currentHealth -= damage;
+        animator.SetTrigger("die");
+        Destroy(gameObject, 0.8f);
+
+
+
+    }
+
     
 
 }

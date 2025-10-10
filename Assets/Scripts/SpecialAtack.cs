@@ -19,9 +19,15 @@ public class SpecialAttackZone : MonoBehaviour
         if (other.CompareTag("Enemy"))
         {
             Enemy enemy = other.GetComponent<Enemy>();
+            Executioner executioner = other.GetComponent<Executioner>();
             if (enemy != null)
             {
                 enemy.TakeDamage(damage);
+            }
+            if (executioner != null)
+            {
+
+                executioner.TakeDamageAndDie(damage);
             }
         }
     }
