@@ -14,7 +14,7 @@ public class ArcherController : MonoBehaviour
     public float shootForce = 10f;
 
     private bool isJumping;
-    public float jumpAmount = 30f;
+    public float jumpAmount = 9f;
 
     private bool isDead = false;
 
