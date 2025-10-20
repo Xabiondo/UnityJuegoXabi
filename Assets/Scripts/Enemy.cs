@@ -15,11 +15,14 @@ public class Enemy : MonoBehaviour
     private bool canAttack = true;
     public float attackCooldown = 1f;
 
+    private Vector2 originalScale; 
+
     void Start()
     {
         currentHealth = maxHealth;
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
+        originalScale = transform.localScale;
     }
 
     void Update()
@@ -38,13 +41,12 @@ public class Enemy : MonoBehaviour
             isWalking = true;
 
             if (directionX > 0)
-                transform.localScale = new Vector3(7, 7, 1);
+                transform.localScale = new Vector3(originalScale.x, originalScale.y, 1);
             else if (directionX < 0)
-                transform.localScale = new Vector3(-7, 7, 1);
+                transform.localScale = new Vector3(-originalScale.x, originalScale.y, 1);
         }
         else
         {
-
             rb.velocity = Vector2.zero;
             isWalking = false;
         }

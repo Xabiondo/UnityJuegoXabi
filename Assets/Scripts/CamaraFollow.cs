@@ -7,7 +7,7 @@ public class CameraFollow : MonoBehaviour
     public Vector3 baseOffset = new Vector3(0, 5, -10); // Offset base (arriba y atrás)
     
     [Range(0, 1)]
-    public float heightInfluence = 0.365f; // Cuánto afecta la altura del jugador al offset
+    public float heightInfluence = 0f; // Cuánto afecta la altura del jugador al offset
 
     void LateUpdate()
     {
