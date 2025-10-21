@@ -8,6 +8,7 @@ TagManager:
   - Enemy
   - Spikes
   - dfss
+  - SlidingFloor
   layers:
   - Default
   - TransparentFX
