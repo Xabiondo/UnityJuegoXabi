@@ -9,6 +9,7 @@ TagManager:
   - Spikes
   - dfss
   - SlidingFloor
+  - SlipperyGround
   layers:
   - Default
   - TransparentFX

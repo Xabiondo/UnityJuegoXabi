@@ -1,30 +1,36 @@
 using UnityEngine;
-//using UnityEngine.SceneManagement; 
+using UnityEngine.UI;
 
 public class ArcherController : MonoBehaviour
 {
     [SerializeField] private float speed = 20f;
+    public HealthBar healthBarUI;
     private Rigidbody2D rb;
+    private int maxAmmo = 10;
+    private int currentAmmo;
     private Animator animator;
 
     public GameObject arrowPrefab;
-
     public Transform shootPoint;
-
     public float shootForce = 10f;
+    public AmmoIconManager ammoIconManager;
 
     private bool isJumping;
     public float jumpAmount = 7f;
 
+    // ✅ Ahora representa las CARGAS del ataque especial
+    private int maxSpecialCharges = 2;
+    private int currentSpecialCharges;
+
     private bool isDead = false;
-
     public int maxHealth = 3;
-
     private int currentHealth;
 
+    public Text ammoText; // Puedes eliminarlo si no lo usas
+
     Transform spawnPoint;
-    public GameObject specialAttackPrefab; // Arrástralo en el Inspector
-    public float specialAttackRadius = 1.5f; // Radio del ataque (ajusta según necesites)
+    public GameObject specialAttackPrefab;
+    public float specialAttackRadius = 1.5f;
 
     void Start()
     {
@@ -32,6 +38,19 @@ public class ArcherController : MonoBehaviour
         animator = GetComponent<Animator>();
         currentHealth = maxHealth;
         spawnPoint = GameObject.FindGameObjectWithTag("Respawn").transform;
+
+        if (healthBarUI != null)
+        {
+            healthBarUI.SetMaxHealth(maxHealth);
+            healthBarUI.SetCurrentHealth(currentHealth);
+        }
+
+        currentAmmo = maxAmmo;
+        if (ammoIconManager != null)
+            ammoIconManager.SetAmmo(currentAmmo);
+
+        // ✅ Inicializar cargas del ataque especial
+        currentSpecialCharges = maxSpecialCharges;
     }
 
     private void FixedUpdate()
@@ -41,7 +60,6 @@ public class ArcherController : MonoBehaviour
         float horizontalMovement = horizontalInput * speed * Time.fixedDeltaTime;
         rb.velocity = new Vector2(horizontalMovement, rb.velocity.y);
 
-        // Voltear solo si hay input y la dirección no coincide
         if (horizontalInput > 0 && transform.localScale.x < 0)
         {
             Flip();
@@ -51,7 +69,6 @@ public class ArcherController : MonoBehaviour
             Flip();
         }
 
-        // ACTUALIZAR animación de correr aquí para mayor fluidez
         bool isMoving = horizontalInput != 0;
         bool isRunning = isMoving && !isJumping;
         animator.SetBool("isRunning", isRunning);
@@ -60,6 +77,7 @@ public class ArcherController : MonoBehaviour
     void Update()
     {
         if (isDead) return;
+
         if (Input.GetKeyDown(KeyCode.Space) && !isJumping)
         {
             rb.AddForce(Vector2.up * jumpAmount, ForceMode2D.Impulse);
@@ -67,20 +85,19 @@ public class ArcherController : MonoBehaviour
             animator.SetBool("isJumping", true);
         }
 
-        if (Input.GetMouseButtonDown(0))
+        // Disparo normal
+        if (Input.GetMouseButtonDown(0) && currentAmmo > 0)
         {
-            // Instancia la flecha en la posición del jugador (o cámara)
             animator.SetTrigger("Shoot");
         }
-        if (Input.GetMouseButtonDown(1))
+
+        // Ataque especial: solo si hay cargas
+        if (Input.GetMouseButtonDown(1) && currentSpecialCharges > 0)
         {
             animator.SetTrigger("specialAttack");
             Invoke("CreateSpecialAttack", 0.6f);
-
-
         }
     }
-
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
@@ -96,33 +113,40 @@ public class ArcherController : MonoBehaviour
     {
         if (isDead) return;
         Vector3 scale = transform.localScale;
-        scale.x *= -1; // Solo invierte el signo, mantiene el tamaño
+        scale.x *= -1;
         transform.localScale = scale;
     }
+
     public void Shoot()
     {
         if (isDead) return;
         if (arrowPrefab == null || shootPoint == null) return;
-        // Instancia la flecha en la posición del ShootPoint
+        if (currentAmmo <= 0) return;
+
         GameObject arrow = Instantiate(arrowPrefab, shootPoint.position, Quaternion.identity);
-
-        // Determina la dirección: derecha si scale.x > 0, izquierda si scale.x < 0
         Vector2 direction = new Vector2(Mathf.Sign(transform.localScale.x), 0);
-
-        // Aplica fuerza en esa dirección
         arrow.GetComponent<Rigidbody2D>().AddForce(direction * shootForce, ForceMode2D.Impulse);
+
+        currentAmmo--;
+        if (ammoIconManager != null)
+            ammoIconManager.SetAmmo(currentAmmo);
     }
+
     public void CreateSpecialAttack()
     {
         if (isDead) return;
         if (specialAttackPrefab == null) return;
+        if (currentSpecialCharges <= 0) return; // Doble verificación
 
-        // Instancia el rectángulo justo en la posición del arquero
         GameObject hitbox = Instantiate(specialAttackPrefab, shootPoint.position, Quaternion.identity);
-
-        // Se destruye solo después de 0.2 segundos (¡muy rápido!)
         Destroy(hitbox, 2f);
+
+        // ✅ Reducir una carga
+        currentSpecialCharges--;
+        
+        // (Opcional) Aquí podrías actualizar una UI de cargas si la creas más tarde
     }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (isDead) return;
@@ -130,7 +154,6 @@ public class ArcherController : MonoBehaviour
         {
             TakeDamage(1);
         }
-
     }
 
     public void TakeDamage(int damage)
@@ -142,39 +165,41 @@ public class ArcherController : MonoBehaviour
             Die();
             return;
         }
-
+        if (healthBarUI != null)
+        {
+            healthBarUI.SetCurrentHealth(currentHealth);
+        }
 
         Debug.Log("Archer recibió " + damage + " daño. Vida restante: " + currentHealth);
+         animator.ResetTrigger("hit");
         animator.SetTrigger("hit");
-
     }
+
     void Die()
     {
         animator.SetTrigger("die");
         isDead = true;
-        // Desactiva el collider y el movimiento
-
         rb.velocity = Vector2.zero;
-
-        //LLama al méotdo Respawn después de 2 segundos
         Invoke("Respawn", 2f);
-
-        //SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
+
     public void Respawn()
     {
-        // Restaura la vida
         currentHealth = maxHealth;
         isDead = false;
-
-        // Reactiva el collide
-
-        // Mueve al jugador al punto de respawn
         transform.position = spawnPoint.position;
-        animator.Play("IdleArcher"); 
+        animator.Play("IdleArcher");
 
+        if (healthBarUI != null)
+        {
+            healthBarUI.SetCurrentHealth(currentHealth);
+        }
+
+        currentAmmo = maxAmmo;
+        if (ammoIconManager != null)
+            ammoIconManager.SetAmmo(currentAmmo);
+
+        // ✅ Restaurar las cargas del ataque especial al respawnear
+        currentSpecialCharges = maxSpecialCharges;
     }
-    
-    
-
 }
