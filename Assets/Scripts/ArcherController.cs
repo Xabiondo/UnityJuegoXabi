@@ -10,6 +10,8 @@ public class ArcherController : MonoBehaviour
     private int currentAmmo;
     private Animator animator;
 
+    private int puntuacion = 0; 
+
     public GameObject arrowPrefab;
     public Transform shootPoint;
     public float shootForce = 10f;
@@ -18,15 +20,15 @@ public class ArcherController : MonoBehaviour
     private bool isJumping;
     public float jumpAmount = 7f;
 
-    // ✅ Ahora representa las CARGAS del ataque especial
-    private int maxSpecialCharges = 2;
-    private int currentSpecialCharges;
-
     private bool isDead = false;
     public int maxHealth = 3;
     private int currentHealth;
 
-    public Text ammoText; // Puedes eliminarlo si no lo usas
+    public Text ammoText;
+
+    private bool estaUsandoEspecial = false; 
+
+    public Text scoreText;
 
     Transform spawnPoint;
     public GameObject specialAttackPrefab;
@@ -49,8 +51,6 @@ public class ArcherController : MonoBehaviour
         if (ammoIconManager != null)
             ammoIconManager.SetAmmo(currentAmmo);
 
-        // ✅ Inicializar cargas del ataque especial
-        currentSpecialCharges = maxSpecialCharges;
     }
 
     private void FixedUpdate()
@@ -91,9 +91,9 @@ public class ArcherController : MonoBehaviour
             animator.SetTrigger("Shoot");
         }
 
-        // Ataque especial: solo si hay cargas
-        if (Input.GetMouseButtonDown(1) && currentSpecialCharges > 0)
+        if (Input.GetMouseButtonDown(1) && currentHealth > 0 && !estaUsandoEspecial)
         {
+            estaUsandoEspecial = true; 
             animator.SetTrigger("specialAttack");
             Invoke("CreateSpecialAttack", 0.6f);
         }
@@ -108,6 +108,13 @@ public class ArcherController : MonoBehaviour
             animator.SetBool("isJumping", false);
         }
     }
+    public void addScore(int points)
+    {
+        if (isDead) return;
+        puntuacion = puntuacion + points;
+        UpdateScoreUI();
+        
+    }
 
     private void Flip()
     {
@@ -116,6 +123,13 @@ public class ArcherController : MonoBehaviour
         scale.x *= -1;
         transform.localScale = scale;
     }
+    private void UpdateScoreUI()
+{
+    if (scoreText != null)
+    {
+        scoreText.text = puntuacion.ToString();
+    }
+}
 
     public void Shoot()
     {
@@ -136,15 +150,14 @@ public class ArcherController : MonoBehaviour
     {
         if (isDead) return;
         if (specialAttackPrefab == null) return;
-        if (currentSpecialCharges <= 0) return; // Doble verificación
 
+        // ✅ Consumir 1 de vida al usar el ataque especial
+        TakeDamage(1); // Esto ya maneja la muerte si la vida llega a 0
+
+        // Instanciar el ataque especial
         GameObject hitbox = Instantiate(specialAttackPrefab, shootPoint.position, Quaternion.identity);
         Destroy(hitbox, 2f);
-
-        // ✅ Reducir una carga
-        currentSpecialCharges--;
-        
-        // (Opcional) Aquí podrías actualizar una UI de cargas si la creas más tarde
+        estaUsandoEspecial = false; 
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -171,20 +184,24 @@ public class ArcherController : MonoBehaviour
         }
 
         Debug.Log("Archer recibió " + damage + " daño. Vida restante: " + currentHealth);
-         animator.ResetTrigger("hit");
+        animator.ResetTrigger("hit");
         animator.SetTrigger("hit");
     }
 
     void Die()
     {
+        currentHealth = 0;
+        healthBarUI.SetCurrentHealth(0);
         animator.SetTrigger("die");
         isDead = true;
         rb.velocity = Vector2.zero;
-        Invoke("Respawn", 2f);
+        Invoke("Respawn", 3f);
     }
 
     public void Respawn()
     {
+        isJumping = false; 
+        
         currentHealth = maxHealth;
         isDead = false;
         transform.position = spawnPoint.position;
@@ -199,7 +216,5 @@ public class ArcherController : MonoBehaviour
         if (ammoIconManager != null)
             ammoIconManager.SetAmmo(currentAmmo);
 
-        // ✅ Restaurar las cargas del ataque especial al respawnear
-        currentSpecialCharges = maxSpecialCharges;
     }
 }

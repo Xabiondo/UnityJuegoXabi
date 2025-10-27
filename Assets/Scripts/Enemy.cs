@@ -78,13 +78,22 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter2D(Collider2D other)
+void OnTriggerEnter2D(Collider2D other)
+{
+    if (other.CompareTag("Player") && !isDead)
     {
-        if (other.CompareTag("Player") && canAttack && !isDead)
-        {
-            AttackPlayer(other.gameObject);
-        }
+        // Al entrar, activar persecución y preparar ataque
+        isChasing = true;
     }
+}
+
+void OnTriggerStay2D(Collider2D other)
+{
+    if (other.CompareTag("Player") && canAttack && !isDead)
+    {
+        AttackPlayer(other.gameObject);
+    }
+}
 
     void AttackPlayer(GameObject playerObj)
     {
@@ -125,6 +134,12 @@ public class Enemy : MonoBehaviour
 
     void Die()
     {
+
+        ArcherController player = FindObjectOfType<ArcherController>();
+        if (player != null)
+        {
+            player.addScore(20);
+        }
         isDead = true;
         animator.SetBool("isWalking", false);
         animator.SetTrigger("die");
