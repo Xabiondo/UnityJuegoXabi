@@ -16,6 +16,7 @@ public class ArcherController : MonoBehaviour
     public Transform shootPoint;
     public float shootForce = 10f;
     public AmmoIconManager ammoIconManager;
+    public AudioClip flechaRuido ; 
 
     private bool isJumping;
     public float jumpAmount = 7f;
@@ -24,7 +25,6 @@ public class ArcherController : MonoBehaviour
     public int maxHealth = 3;
     private int currentHealth;
 
-    public Text ammoText;
 
     private bool estaUsandoEspecial = false; 
 
@@ -140,6 +140,7 @@ public class ArcherController : MonoBehaviour
         GameObject arrow = Instantiate(arrowPrefab, shootPoint.position, Quaternion.identity);
         Vector2 direction = new Vector2(Mathf.Sign(transform.localScale.x), 0);
         arrow.GetComponent<Rigidbody2D>().AddForce(direction * shootForce, ForceMode2D.Impulse);
+        GetComponent<AudioSource>().PlayOneShot(flechaRuido);
 
         currentAmmo--;
         if (ammoIconManager != null)
